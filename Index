@@ -1,0 +1,133 @@
+// Import required libraries
+const bitcoinjs = require('bitcoinjs-lib');
+const axios = require('axios');
+
+// Set up the network
+const network = bitcoinjs.networks.bitcoin;
+
+// Generate a new wallet
+const wallet = bitcoinjs.ECPair.makeRandom(network);
+
+// Get the wallet address
+const address = wallet.getAddress();
+
+// Get the private key
+const privateKey = wallet.toWIF();
+
+// Set up the API endpoint for transactions
+const apiEndpoint = 'https://api.blockcypher.com/v1/btc/main';
+
+// Function to send Bitcoin
+async function sendBitcoin(recipientAddress, amount) {
+  // Create a new transaction
+  const transaction = new bitcoinjs.TransactionBuilder(network);
+
+  // Add the recipient address and amount
+  transaction.addOutput(recipientAddress, amount);
+
+  // Sign the transaction with the private key
+  transaction.sign(0, wallet);
+
+  // Serialize the transaction
+  const serializedTransaction = transaction.build().toHex();
+
+  // Send the transaction to the API endpoint
+  const response = await axios.post(`${apiEndpoint}/txs/new`, {
+    tx: serializedTransaction,
+  });
+
+  // Return the transaction hash
+  return response.data.tx.hash;
+}
+
+// Function to buy Bitcoin
+async function buyBitcoin(amount) {
+  // Set up the API endpoint for buying Bitcoin
+  const buyApiEndpoint = 'https://api.coinbase.com/v2/prices/BTC-USD/buy';
+
+  // Get the current price of Bitcoin
+  const response = await axios.get(buyApiEndpoint);
+  const currentPrice = response.data.data.amount;
+
+  // Calculate the amount of Bitcoin to buy
+  const bitcoinAmount = amount / currentPrice;
+
+  // Create a new transaction to buy Bitcoin
+  const transaction = new bitcoinjs.TransactionBuilder(network);
+
+  // Add the recipient address and amount
+  transaction.addOutput(address, bitcoinAmount);
+
+  // Sign the transaction with the private key
+  transaction.sign(0, wallet);
+
+  // Serialize the transaction
+  const serializedTransaction = transaction.build().toHex();
+
+  // Send the transaction to the API endpoint
+  const response = await axios.post(`${apiEndpoint}/txs/new`, {
+    tx: serializedTransaction,
+  });
+
+  // Return the transaction hash
+  return response.data.tx.hash;
+}
+
+// Function to sell Bitcoin
+async function sellBitcoin(amount) {
+  // Set up the API endpoint for selling Bitcoin
+  const sellApiEndpoint = 'https://api.coinbase.com/v2/prices/BTC-USD/sell';
+
+  // Get the current price of Bitcoin
+  const response = await axios.get(sellApiEndpoint);
+  const currentPrice = response.data.data.amount;
+
+  // Calculate the amount of Bitcoin to sell
+  const bitcoinAmount = amount / currentPrice;
+
+  // Create a new transaction to sell Bitcoin
+  const transaction = new bitcoinjs.TransactionBuilder(network);
+
+  // Add the recipient address and amount
+  transaction.addOutput(address, bitcoinAmount);
+
+  // Sign the transaction with the private key
+  transaction.sign(0, wallet);
+
+  // Serialize the transaction
+  const serializedTransaction = transaction.build().toHex();
+
+  // Send the transaction to the API endpoint
+  const response = await axios.post(`${apiEndpoint}/txs/new`, {
+    tx: serializedTransaction,
+  });
+
+  // Return the transaction hash
+  return response.data.tx.hash;
+}
+
+// Example usage
+async function main() {
+  // Generate a new wallet
+  console.log('Wallet address:', address);
+  console.log('Private key:', privateKey);
+
+  // Send Bitcoin
+  const recipientAddress = '1A1zP1eP5QGefi2DMPTfTL5SLmv7Divf';
+  const amount = 0.01;
+  const transactionHash = await sendBitcoin(recipientAddress, amount);
+  console.log('Transaction hash:', transactionHash);
+
+  // Buy Bitcoin
+  const buyAmount = 10;
+  const buyTransactionHash = await buyBitcoin(buyAmount);
+  console.log('Buy transaction hash:', buyTransactionHash);
+
+  // Sell Bitcoin
+  const sellAmount = 5;
+  const sellTransactionHash = await sellBitcoin(sellAmount);
+  console.log('Sell transaction hash:', sellTransactionHash);
+}
+
+main();
+```
